@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
 const Register = () => {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(1); // Step 1: Register, Step 2: OTP Verification
   const [formData, setFormData] = useState({
     username: "",
     name: "",
@@ -16,10 +16,11 @@ const Register = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
+
   const { register, verifyOtp } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -28,53 +29,35 @@ const Register = () => {
     });
   };
 
-  const handleSubmitStep1 = async (e) => {
+  // Step 1: Handle registration
+  const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    // Validate password match
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
-    }
-
+    console.log("Submitting data:", formData);
+    
     try {
-      // Register user and send OTP
-      await register({
-        username: formData.username,
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword,
-      });
-
-      setOtpSent(true);
-      setStep(2);
+      await register(formData);
+      setStep(2); // Move to OTP verification step
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Registration failed. Please try again."
-      );
+      setError(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmitStep2 = async (e) => {
+  // Step 2: Handle OTP verification
+  const handleOtpVerify = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      // Verify OTP
       await verifyOtp(formData.email, formData.otp);
       navigate("/login");
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "OTP verification failed. Please try again."
-      );
+      setError(err.response?.data?.message || "OTP verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -83,12 +66,13 @@ const Register = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>Register</h2>
+        <h2>{step === 1 ? "Register" : "Verify OTP"}</h2>
 
         {error && <div className="error-message">{error}</div>}
 
         {step === 1 ? (
-          <form onSubmit={handleSubmitStep1}>
+          // Step 1: Registration Form
+          <form onSubmit={handleRegister}>
             <div className="form-group">
               <label htmlFor="username">Username</label>
               <input
@@ -136,10 +120,6 @@ const Register = () => {
                 required
                 minLength="8"
               />
-              <small>
-                Password must contain at least one uppercase letter, one number,
-                and one special character
-              </small>
             </div>
 
             <div className="form-group">
@@ -154,16 +134,13 @@ const Register = () => {
               />
             </div>
 
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
+            <button type="submit" className="btn btn-primary" disabled={loading}>
               {loading ? "Sending OTP..." : "Register"}
             </button>
           </form>
         ) : (
-          <form onSubmit={handleSubmitStep2}>
+          // Step 2: OTP Verification Form
+          <form onSubmit={handleOtpVerify}>
             <div className="form-group">
               <label htmlFor="otp">Enter OTP sent to your email</label>
               <input
@@ -176,11 +153,7 @@ const Register = () => {
               />
             </div>
 
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
+            <button type="submit" className="btn btn-primary" disabled={loading}>
               {loading ? "Verifying..." : "Verify OTP"}
             </button>
           </form>
@@ -194,4 +167,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default Register;  

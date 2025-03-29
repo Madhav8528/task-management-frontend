@@ -1,138 +1,39 @@
-"use client";
+import axios from "axios"
 
-import { createContext, useState, useEffect } from "react";
-import api from "../utils/api";
+const api = axios.create({
+  baseURL: "http://localhost:7240",
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
+})
 
-export const AuthContext = createContext();
+// Add a response interceptor to handle token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+    // If the error is 401 and we haven't already tried to refresh
+    if (error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
 
-  useEffect(() => {
-    // Check if user is already logged in
-    const checkAuthStatus = async () => {
       try {
-        const response = await api.get("/api/v1/user/refresh-access-token");
-        if (response.data.data) {
-          setUser(response.data.data);
-        }
-      } catch (err) {
-        console.log("Not authenticated");
-      } finally {
-        setLoading(false);
+        // Try to refresh the token
+        await axios.post("/api/v1/user/refresh-access-token", {}, { withCredentials: true })
+
+        // If successful, retry the original request
+        return api(originalRequest)
+      } catch (refreshError) {
+        // If refresh fails, redirect to login
+        window.location.href = "/login"
+        return Promise.reject(refreshError)
       }
-    };
-
-    checkAuthStatus();
-  }, []);
-
-  const login = async (email, password) => {
-    try {
-      setError(null);
-      const response = await api.post("/api/v1/user/login", {
-        email,
-        password,
-      });
-      setUser(response.data.data);
-      return response.data;
-    } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
-      throw err;
     }
-  };
 
-  const adminLogin = async (email, password) => {
-    try {
-      setError(null);
-      const response = await api.post("/api/v1/admin/login", {
-        email,
-        password,
-      });
-      setUser(response.data.data);
-      return response.data;
-    } catch (err) {
-      setError(err.response?.data?.message || "Admin login failed");
-      throw err;
-    }
-  };
+    return Promise.reject(error)
+  },
+)
 
-  const register = async (userData) => {
-    try {
-      setError(null);
-      const response = await api.post("/api/v1/user/register", userData);
-      return response.data;
-    } catch (err) {
-      setError(err.response?.data?.message || "Registration failed");
-      throw err;
-    }
-  };
+export default api
 
-  const verifyOtp = async (email, otp) => {
-    try {
-      setError(null);
-      const response = await api.post("/api/v1/user/register", { email, otp });
-      setUser(response.data.data);
-      return response.data;
-    } catch (err) {
-      setError(err.response?.data?.message || "OTP verification failed");
-      throw err;
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await api.post("/api/v1/user/logout");
-      setUser(null);
-    } catch (err) {
-      console.error("Logout error:", err);
-    }
-  };
-
-  const forgotPassword = async (email) => {
-    try {
-      setError(null);
-      const response = await api.post("/api/v1/user/forgot-password", {
-        email,
-      });
-      return response.data;
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to send recovery email");
-      throw err;
-    }
-  };
-
-  const resetPassword = async (token, password, confirmPassword) => {
-    try {
-      setError(null);
-      const response = await api.post(`/api/v1/user/reset-password/${token}`, {
-        password,
-        confirmPassword,
-      });
-      return response.data;
-    } catch (err) {
-      setError(err.response?.data?.message || "Password reset failed");
-      throw err;
-    }
-  };
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        error,
-        login,
-        adminLogin,
-        register,
-        verifyOtp,
-        logout,
-        forgotPassword,
-        resetPassword,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-};

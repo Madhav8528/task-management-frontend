@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import api from "../../utils/api";
-import UserList from "./UserList";
+import api from "../../utils/api.js";
+import UserList from "./UserList.jsx";
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
