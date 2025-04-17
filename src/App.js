@@ -17,6 +17,8 @@ import { AuthProvider } from "./context/AuthContext";
 import ForgotPassword from "./components/auth/ForgotPassword";
 import ResetPassword from "./components/auth/ResetPassword";
 import "./App.css";
+import Lobby from "./components/video-meet/Lobby";
+import Room from "./components/video-meet/Room";
 
 function App() {
   return (
@@ -76,6 +78,24 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <TaskForm />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/lobby"
+                element={
+                  <ProtectedRoute>
+                    <Lobby />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/room/:roomId"
+                element={
+                  <ProtectedRoute>
+                    <Room />
                   </ProtectedRoute>
                 }
               />

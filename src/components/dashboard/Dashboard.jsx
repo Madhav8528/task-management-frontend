@@ -68,7 +68,11 @@ const Dashboard = () => {
         <Link to="/tasks" className="btn btn-secondary">
           View All Tasks
         </Link>
+        <Link to="/lobby" className="btn btn-secondary">
+          Meeting Lobby
+        </Link>
       </div>
+      
 
       <div className="dashboard-grid">
         <div className="dashboard-card">
